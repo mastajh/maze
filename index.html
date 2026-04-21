@@ -2,685 +2,1310 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#f5f3ee">
-<title>미로 생성기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미로 놀이터 🖍️</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f5f3ee;
-    --panel: #ffffff;
-    --border: #d8d3c7;
-    --text: #2a2a2a;
-    --muted: #6b6b6b;
-    --accent: #2f6fed;
-    --accent-hover: #1f5bd6;
-    --share: #22a06b;
-    --share-hover: #1a8256;
-    --start: #3cb450;
-    --goal: #e63232;
-  }
+  html, body, #root { margin:0; padding:0; height:100%; width:100%; overflow:hidden; font-family:'Pretendard','Noto Sans KR',sans-serif; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-  }
-  aside.controls {
-    width: 340px;
-    flex-shrink: 0;
-    background: var(--panel);
-    border-right: 1px solid var(--border);
-    padding: 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  main {
-    flex: 1;
-    padding: 24px;
-    overflow: auto;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-  }
-  h1 {
-    margin: 0 0 4px;
-    font-size: 20px;
-    font-weight: 700;
-  }
-  h1 .sub {
-    display: block;
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--muted);
-    margin-top: 3px;
-    line-height: 1.4;
-  }
-  label.field {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  label.field input, label.field select {
-    padding: 11px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 16px;
-    font-family: inherit;
-    color: var(--text);
-    background: #fff;
-    min-height: 44px;
-  }
-  label.field input[type=range] { padding: 0; min-height: 32px; }
-  label.field input:focus, label.field select:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .desc {
-    font-size: 12px;
-    color: var(--muted);
-    background: #faf8f2;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    line-height: 1.5;
-    min-height: 46px;
-  }
-  .checkbox-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    color: var(--text);
-    padding: 6px 0;
-  }
-  .checkbox-row input { width: 20px; height: 20px; }
-  .algo-params {
-    border-top: 1px dashed var(--border);
-    padding-top: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .algo-params:empty { display: none; }
-  button {
-    padding: 13px 14px;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s, transform 0.05s;
-    min-height: 48px;
-  }
-  button:active { transform: scale(0.98); }
-  button.primary { background: var(--accent); color: white; }
-  button.primary:hover { background: var(--accent-hover); }
-  button.share { background: var(--share); color: white; }
-  button.share:hover { background: var(--share-hover); }
-  button.secondary { background: #eeeae0; color: var(--text); }
-  button.secondary:hover { background: #e0dbce; }
-  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  canvas {
-    background: white;
-    border: 1px solid var(--border);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    max-width: 100%;
-    height: auto !important;
-    display: block;
-  }
-  .status {
-    font-size: 12px;
-    color: var(--muted);
-    text-align: center;
-    padding: 4px 0;
-    min-height: 18px;
-  }
-  .legend {
-    display: flex;
-    gap: 14px;
-    font-size: 12px;
-    color: var(--muted);
-    align-items: center;
-    justify-content: center;
-  }
-  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: middle; }
-  .dot.start { background: var(--start); }
-  .dot.goal { background: var(--goal); }
-
-  /* Mobile */
-  @media (max-width: 768px) {
-    body { flex-direction: column; }
-    aside.controls {
-      width: 100%;
-      border-right: none;
-      border-bottom: 1px solid var(--border);
-      padding: 16px;
-      gap: 12px;
-    }
-    main { padding: 12px; }
-    h1 { font-size: 18px; }
-    h1 .sub { display: none; }
-    .desc { font-size: 12px; padding: 8px 10px; }
-  }
-
-  @media print {
-    aside.controls { display: none; }
-    main { padding: 0; }
-    canvas { border: none; box-shadow: none; }
-    body { background: white; }
-  }
+  @keyframes twinkle { 0%,100% { opacity:.3; transform:scale(1); } 50% { opacity:.9; transform:scale(1.4); } }
+  @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
 </style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>
+// maze-engine.js — 6개 알고리즘 엔진
+// 모든 알고리즘은 step()을 yield하는 generator를 반환.
+// grid는 cells[y][x] = {walls: {N,E,S,W}, visited} 구조.
+
+(function () {
+  // ── 시드 랜덤 ────────────────────────────────────
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hashSeed(s) {
+    if (!s) return (Math.random() * 2 ** 32) >>> 0;
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+
+  // ── grid 만들기 ─────────────────────────────────
+  function makeGrid(cols, rows) {
+    const cells = [];
+    for (let y = 0; y < rows; y++) {
+      const row = [];
+      for (let x = 0; x < cols; x++) row.push({ x, y, walls: { N: true, E: true, S: true, W: true }, visited: false });
+      cells.push(row);
+    }
+    return { cols, rows, cells };
+  }
+
+  const OPP = { N: 'S', S: 'N', E: 'W', W: 'E' };
+  const DX = { N: 0, S: 0, E: 1, W: -1 };
+  const DY = { N: -1, S: 1, E: 0, W: 0 };
+
+  function removeWall(a, b, dir) {
+    a.walls[dir] = false;
+    b.walls[OPP[dir]] = false;
+  }
+
+  function neighbors(grid, c) {
+    const out = [];
+    for (const d of ['N', 'E', 'S', 'W']) {
+      const nx = c.x + DX[d], ny = c.y + DY[d];
+      if (nx >= 0 && ny >= 0 && nx < grid.cols && ny < grid.rows) out.push({ dir: d, cell: grid.cells[ny][nx] });
+    }
+    return out;
+  }
+
+  function shuffle(arr, rnd) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rnd() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // ── 알고리즘별 제너레이터 ────────────────────────
+  // 각 generator는 {type, cells:[...]} 를 yield — cells는 "현재 프론티어"로 렌더.
+
+  function* backtracking(grid, rnd) {
+    const stack = [grid.cells[0][0]];
+    grid.cells[0][0].visited = true;
+    while (stack.length) {
+      const cur = stack[stack.length - 1];
+      const unv = neighbors(grid, cur).filter(n => !n.cell.visited);
+      if (!unv.length) { stack.pop(); yield { frontier: [cur], tail: stack.slice() }; continue; }
+      const { cell: nxt, dir } = unv[Math.floor(rnd() * unv.length)];
+      removeWall(cur, nxt, dir);
+      nxt.visited = true;
+      stack.push(nxt);
+      yield { frontier: [nxt], tail: stack.slice() };
+    }
+  }
+
+  function* prims(grid, rnd) {
+    const start = grid.cells[0][0];
+    start.visited = true;
+    const frontier = neighbors(grid, start).map(n => ({ from: start, to: n.cell, dir: n.dir }));
+    while (frontier.length) {
+      const i = Math.floor(rnd() * frontier.length);
+      const edge = frontier.splice(i, 1)[0];
+      if (edge.to.visited) continue;
+      removeWall(edge.from, edge.to, edge.dir);
+      edge.to.visited = true;
+      for (const n of neighbors(grid, edge.to)) if (!n.cell.visited) frontier.push({ from: edge.to, to: n.cell, dir: n.dir });
+      yield { frontier: [edge.to], edges: frontier.map(e => e.to) };
+    }
+  }
+
+  function* kruskals(grid, rnd) {
+    const parent = new Map();
+    const find = a => parent.get(a) === a ? a : (parent.set(a, find(parent.get(a))), parent.get(a));
+    const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) { parent.set(ra, rb); return true; } return false; };
+    for (let y = 0; y < grid.rows; y++) for (let x = 0; x < grid.cols; x++) parent.set(grid.cells[y][x], grid.cells[y][x]);
+    const edges = [];
+    for (let y = 0; y < grid.rows; y++) for (let x = 0; x < grid.cols; x++) {
+      if (x + 1 < grid.cols) edges.push({ a: grid.cells[y][x], b: grid.cells[y][x + 1], dir: 'E' });
+      if (y + 1 < grid.rows) edges.push({ a: grid.cells[y][x], b: grid.cells[y + 1][x], dir: 'S' });
+    }
+    shuffle(edges, rnd);
+    for (const e of edges) {
+      if (union(e.a, e.b)) { removeWall(e.a, e.b, e.dir); yield { frontier: [e.a, e.b] }; }
+    }
+  }
+
+  function* wilsons(grid, rnd) {
+    const unvisited = new Set();
+    for (let y = 0; y < grid.rows; y++) for (let x = 0; x < grid.cols; x++) unvisited.add(grid.cells[y][x]);
+    const first = [...unvisited][Math.floor(rnd() * unvisited.size)];
+    unvisited.delete(first);
+    first.visited = true;
+    while (unvisited.size) {
+      const start = [...unvisited][Math.floor(rnd() * unvisited.size)];
+      let cur = start;
+      const pathDir = new Map();
+      while (unvisited.has(cur)) {
+        const ns = neighbors(grid, cur);
+        const pick = ns[Math.floor(rnd() * ns.length)];
+        pathDir.set(cur, pick.dir);
+        cur = pick.cell;
+        yield { frontier: [cur], walk: [...pathDir.keys()] };
+      }
+      // carve path
+      cur = start;
+      while (unvisited.has(cur)) {
+        const d = pathDir.get(cur);
+        const nx = cur.x + DX[d], ny = cur.y + DY[d];
+        const next = grid.cells[ny][nx];
+        removeWall(cur, next, d);
+        cur.visited = true;
+        unvisited.delete(cur);
+        cur = next;
+        yield { frontier: [cur] };
+      }
+    }
+  }
+
+  function* division(grid, rnd) {
+    // start with no walls, add outer-only, then recursively divide.
+    for (let y = 0; y < grid.rows; y++) for (let x = 0; x < grid.cols; x++) {
+      const c = grid.cells[y][x];
+      c.walls.N = y === 0; c.walls.S = y === grid.rows - 1;
+      c.walls.W = x === 0; c.walls.E = x === grid.cols - 1;
+    }
+    function* divide(x, y, w, h) {
+      if (w < 2 || h < 2) return;
+      const horiz = w < h ? true : w > h ? false : rnd() < 0.5;
+      if (horiz) {
+        const wallY = y + Math.floor(rnd() * (h - 1));
+        const passX = x + Math.floor(rnd() * w);
+        for (let i = 0; i < w; i++) if (x + i !== passX) {
+          grid.cells[wallY][x + i].walls.S = true;
+          grid.cells[wallY + 1][x + i].walls.N = true;
+        }
+        yield { frontier: [grid.cells[wallY][passX]] };
+        yield* divide(x, y, w, wallY - y + 1);
+        yield* divide(x, wallY + 1, w, y + h - wallY - 1);
+      } else {
+        const wallX = x + Math.floor(rnd() * (w - 1));
+        const passY = y + Math.floor(rnd() * h);
+        for (let i = 0; i < h; i++) if (y + i !== passY) {
+          grid.cells[y + i][wallX].walls.E = true;
+          grid.cells[y + i][wallX + 1].walls.W = true;
+        }
+        yield { frontier: [grid.cells[passY][wallX]] };
+        yield* divide(x, y, wallX - x + 1, h);
+        yield* divide(wallX + 1, y, x + w - wallX - 1, h);
+      }
+    }
+    yield* divide(0, 0, grid.cols, grid.rows);
+  }
+
+  function* sidewinder(grid, rnd) {
+    for (let y = 0; y < grid.rows; y++) {
+      let run = [];
+      for (let x = 0; x < grid.cols; x++) {
+        const cur = grid.cells[y][x];
+        run.push(cur);
+        const eastBound = x === grid.cols - 1;
+        const northBound = y === 0;
+        const closeOut = eastBound || (!northBound && rnd() < 0.5);
+        if (closeOut) {
+          if (!northBound) {
+            const pick = run[Math.floor(rnd() * run.length)];
+            removeWall(pick, grid.cells[pick.y - 1][pick.x], 'N');
+          }
+          run = [];
+        } else {
+          removeWall(cur, grid.cells[y][x + 1], 'E');
+        }
+        yield { frontier: [cur] };
+      }
+    }
+  }
+
+  const ALGORITHMS = {
+    backtracking: { name: 'Recursive Backtracking', desc: '구불구불', gen: backtracking },
+    prims: { name: "Prim's", desc: '분기 많음', gen: prims },
+    kruskals: { name: "Kruskal's", desc: '균일, 짧은 경로', gen: kruskals },
+    wilsons: { name: "Wilson's", desc: '편향 없음', gen: wilsons },
+    division: { name: 'Recursive Division', desc: '방 구조', gen: division },
+    sidewinder: { name: 'Sidewinder', desc: '수평 흐름', gen: sidewinder },
+  };
+
+  // ── BFS 정답 경로 ────────────────────────────────
+  function solve(grid, start, end) {
+    const q = [start];
+    const prev = new Map();
+    prev.set(start, null);
+    while (q.length) {
+      const c = q.shift();
+      if (c === end) break;
+      for (const d of ['N', 'E', 'S', 'W']) {
+        if (c.walls[d]) continue;
+        const nx = c.x + DX[d], ny = c.y + DY[d];
+        const n = grid.cells[ny] && grid.cells[ny][nx];
+        if (!n || prev.has(n)) continue;
+        prev.set(n, c); q.push(n);
+      }
+    }
+    const path = [];
+    let cur = end;
+    while (cur) { path.push(cur); cur = prev.get(cur); }
+    return path.reverse();
+  }
+
+  function build(opts) {
+    const cols = opts.cols, rows = opts.rows;
+    const grid = makeGrid(cols, rows);
+    const seedNum = hashSeed(opts.seed);
+    const rnd = mulberry32(seedNum);
+    const algo = ALGORITHMS[opts.algo] || ALGORITHMS.backtracking;
+    const gen = algo.gen(grid, rnd);
+    return { grid, gen, algo: opts.algo, seedStr: opts.seed || seedNum.toString(36) };
+  }
+
+  window.MazeEngine = { ALGORITHMS, build, solve, makeGrid, hashSeed };
+})();
+
+</script>
 </head>
 <body>
-<aside class="controls">
-  <h1>미로 생성기<span class="sub">Backtracking · Prim · Kruskal · Wilson · Division · Sidewinder</span></h1>
+<div id="root"></div>
+<script type="text/babel">
+// maze-renderers.jsx — 3가지 스타일의 미로 렌더러
+// 모두 Canvas 2D 사용, 공통 인터페이스 { grid, solution, cell, theme, progress? }
 
-  <label class="field">
-    알고리즘
-    <select id="algo">
-      <option value="backtracking">Recursive Backtracking — 구불구불</option>
-      <option value="prims">Prim's — 분기 많음</option>
-      <option value="kruskals">Kruskal's — 균일, 짧은 경로</option>
-      <option value="wilsons">Wilson's — 편향 없음</option>
-      <option value="division">Recursive Division — 방 구조</option>
-      <option value="sidewinder">Sidewinder — 수평 흐름</option>
-    </select>
-  </label>
-  <div class="desc" id="desc"></div>
+const MazeRenderers = (() => {
 
-  <div class="row2">
-    <label class="field">가로 (칸)
-      <input type="number" id="width" value="18" min="3" max="150" inputmode="numeric">
-    </label>
-    <label class="field">세로 (칸)
-      <input type="number" id="height" value="24" min="3" max="150" inputmode="numeric">
-    </label>
-  </div>
-  <label class="field">셀 크기 (픽셀)
-    <input type="number" id="cellSize" value="24" min="6" max="80" inputmode="numeric">
-  </label>
-  <label class="field">시드 (비우면 랜덤)
-    <input type="text" id="seed" placeholder="예: 42" inputmode="text">
-  </label>
-
-  <div class="algo-params" id="algoParams"></div>
-
-  <label class="checkbox-row">
-    <input type="checkbox" id="showSolution">
-    정답 경로 표시 (부모용)
-  </label>
-
-  <button class="primary" id="generate">미로 만들기</button>
-  <button class="share" id="copy">클립보드에 복사</button>
-  <div class="btn-row">
-    <button class="secondary" id="share">공유</button>
-    <button class="secondary" id="download">PNG 저장</button>
-  </div>
-  <button class="secondary" id="print">인쇄</button>
-
-  <div class="legend">
-    <span><span class="dot start"></span>출발</span>
-    <span><span class="dot goal"></span>도착</span>
-  </div>
-  <div class="status" id="status"></div>
-</aside>
-
-<main>
-  <canvas id="canvas"></canvas>
-</main>
-
-<script>
-const DX = {N:0, E:1, S:0, W:-1};
-const DY = {N:-1, E:0, S:1, W:0};
-const OPP = {N:'S', S:'N', E:'W', W:'E'};
-const DIRS = ['N','E','S','W'];
-
-const DESCRIPTIONS = {
-  backtracking: "깊이우선 탐색으로 길을 뚫어나가는 가장 유명한 방법. 길고 구불구불한 통로가 많이 생겨 \"유기적\"인 느낌이 강합니다.",
-  prims: "현재까지 만든 미로에서 바깥쪽으로 랜덤 확장. 짧은 분기와 막다른 길이 많이 생깁니다.",
-  kruskals: "모든 벽을 섞어놓고 사이클이 안 생기면 허물기. 전체적으로 균일하고 짧은 경로가 많습니다.",
-  wilsons: "편향 없는 완벽한 무작위 신장 트리. 가장 \"공평한\" 미로지만 큰 사이즈에서 느릴 수 있어요.",
-  division: "방을 벽으로 계속 쪼개 내려가는 하향식. 긴 일직선 벽과 방 구조가 특징.",
-  sidewinder: "윗줄부터 행 단위로 진행하며 북쪽 통로를 뚫음. 수평 통로가 강조되는 독특한 패턴.",
-};
-
-const ALGO_PARAMS = {
-  sidewinder: [
-    { id: 'sidewinderBias', label: '수평 치우침 (0 = 세로 많이, 1 = 가로 많이)', type: 'range', min: 0.1, max: 0.9, step: 0.05, default: 0.5 },
-  ],
-  division: [
-    { id: 'divisionBias', label: '분할 방향 편향 (0 = 세로벽, 1 = 가로벽)', type: 'range', min: 0, max: 1, step: 0.05, default: 0.5 },
-  ],
-};
-
-function mulberry32(seed) {
-  return function() {
-    let t = seed += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
-function makeRng(seedStr) {
-  let seed;
-  if (seedStr && seedStr.trim() !== '') {
-    seed = 0;
-    for (const c of seedStr) seed = (seed * 31 + c.charCodeAt(0)) | 0;
-  } else {
-    seed = (Math.random() * 2**32) | 0;
-  }
-  return { rng: mulberry32(seed >>> 0), seed };
-}
-
-function createGrid(w, h, wallsOn = true) {
-  const grid = [];
-  for (let y = 0; y < h; y++) {
-    const row = [];
-    for (let x = 0; x < w; x++) row.push({ N: wallsOn, E: wallsOn, S: wallsOn, W: wallsOn });
-    grid.push(row);
-  }
-  return grid;
-}
-function carve(grid, x, y, dir) {
-  grid[y][x][dir] = false;
-  grid[y + DY[dir]][x + DX[dir]][OPP[dir]] = false;
-}
-function shuffle(arr, rng) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function backtracking(w, h, rng) {
-  const grid = createGrid(w, h);
-  const visited = Array.from({ length: h }, () => Array(w).fill(false));
-  const stack = [[0, 0]];
-  visited[0][0] = true;
-  while (stack.length) {
-    const [x, y] = stack[stack.length - 1];
-    const ns = [];
-    for (const d of DIRS) {
-      const nx = x + DX[d], ny = y + DY[d];
-      if (nx >= 0 && nx < w && ny >= 0 && ny < h && !visited[ny][nx]) ns.push([d, nx, ny]);
-    }
-    if (ns.length) {
-      const [d, nx, ny] = ns[Math.floor(rng() * ns.length)];
-      carve(grid, x, y, d);
-      visited[ny][nx] = true;
-      stack.push([nx, ny]);
-    } else stack.pop();
-  }
-  return grid;
-}
-
-function prims(w, h, rng) {
-  const grid = createGrid(w, h);
-  const inMaze = Array.from({ length: h }, () => Array(w).fill(false));
-  const frontier = [];
-  const sx = Math.floor(rng() * w), sy = Math.floor(rng() * h);
-  inMaze[sy][sx] = true;
-  for (const d of DIRS) {
-    const nx = sx + DX[d], ny = sy + DY[d];
-    if (nx >= 0 && nx < w && ny >= 0 && ny < h) frontier.push([nx, ny]);
-  }
-  while (frontier.length) {
-    const idx = Math.floor(rng() * frontier.length);
-    const [x, y] = frontier[idx];
-    frontier[idx] = frontier[frontier.length - 1];
-    frontier.pop();
-    if (inMaze[y][x]) continue;
-    const linkable = [];
-    for (const d of DIRS) {
-      const nx = x + DX[d], ny = y + DY[d];
-      if (nx >= 0 && nx < w && ny >= 0 && ny < h && inMaze[ny][nx]) linkable.push(d);
-    }
-    const d = linkable[Math.floor(rng() * linkable.length)];
-    carve(grid, x, y, d);
-    inMaze[y][x] = true;
-    for (const d of DIRS) {
-      const nx = x + DX[d], ny = y + DY[d];
-      if (nx >= 0 && nx < w && ny >= 0 && ny < h && !inMaze[ny][nx]) frontier.push([nx, ny]);
-    }
-  }
-  return grid;
-}
-
-function kruskals(w, h, rng) {
-  const grid = createGrid(w, h);
-  const parent = new Array(w * h);
-  for (let i = 0; i < w * h; i++) parent[i] = i;
-  const find = a => {
-    while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; }
-    return a;
-  };
-  const walls = [];
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      if (x < w - 1) walls.push([x, y, 'E']);
-      if (y < h - 1) walls.push([x, y, 'S']);
-    }
-  }
-  shuffle(walls, rng);
-  for (const [x, y, d] of walls) {
-    const nx = x + DX[d], ny = y + DY[d];
-    const a = find(y * w + x), b = find(ny * w + nx);
-    if (a !== b) { parent[a] = b; carve(grid, x, y, d); }
-  }
-  return grid;
-}
-
-function wilsons(w, h, rng) {
-  const grid = createGrid(w, h);
-  const inMaze = Array.from({ length: h }, () => Array(w).fill(false));
-  const sx = Math.floor(rng() * w), sy = Math.floor(rng() * h);
-  inMaze[sy][sx] = true;
-  const remaining = [];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!(x === sx && y === sy)) remaining.push([x, y]);
-  shuffle(remaining, rng);
-  for (const [startX, startY] of remaining) {
-    if (inMaze[startY][startX]) continue;
-    const dirFrom = Array.from({ length: h }, () => Array(w).fill(null));
-    let x = startX, y = startY;
-    while (!inMaze[y][x]) {
-      let d, nx, ny;
-      do {
-        d = DIRS[Math.floor(rng() * 4)];
-        nx = x + DX[d]; ny = y + DY[d];
-      } while (nx < 0 || nx >= w || ny < 0 || ny >= h);
-      dirFrom[y][x] = d;
-      x = nx; y = ny;
-    }
-    x = startX; y = startY;
-    while (!inMaze[y][x]) {
-      const d = dirFrom[y][x];
-      carve(grid, x, y, d);
-      inMaze[y][x] = true;
-      x += DX[d]; y += DY[d];
-    }
-  }
-  return grid;
-}
-
-function recursiveDivision(w, h, rng, params) {
-  const bias = (params && params.divisionBias != null) ? params.divisionBias : 0.5;
-  const grid = createGrid(w, h, false);
-  for (let x = 0; x < w; x++) { grid[0][x].N = true; grid[h-1][x].S = true; }
-  for (let y = 0; y < h; y++) { grid[y][0].W = true; grid[y][w-1].E = true; }
-  function divide(x, y, ww, hh) {
-    if (ww < 2 || hh < 2) return;
-    let horizontal;
-    if (hh > ww * 1.2) horizontal = true;
-    else if (ww > hh * 1.2) horizontal = false;
-    else horizontal = rng() < bias;
-    if (horizontal) {
-      const wy = y + Math.floor(rng() * (hh - 1));
-      const px = x + Math.floor(rng() * ww);
-      for (let i = x; i < x + ww; i++) {
-        if (i === px) continue;
-        grid[wy][i].S = true; grid[wy + 1][i].N = true;
-      }
-      divide(x, y, ww, wy - y + 1);
-      divide(x, wy + 1, ww, y + hh - wy - 1);
-    } else {
-      const wx = x + Math.floor(rng() * (ww - 1));
-      const py = y + Math.floor(rng() * hh);
-      for (let i = y; i < y + hh; i++) {
-        if (i === py) continue;
-        grid[i][wx].E = true; grid[i][wx + 1].W = true;
-      }
-      divide(x, y, wx - x + 1, hh);
-      divide(wx + 1, y, x + ww - wx - 1, hh);
-    }
-  }
-  divide(0, 0, w, h);
-  return grid;
-}
-
-function sidewinder(w, h, rng, params) {
-  const bias = (params && params.sidewinderBias != null) ? params.sidewinderBias : 0.5;
-  const grid = createGrid(w, h);
-  for (let y = 0; y < h; y++) {
-    let runStart = 0;
-    for (let x = 0; x < w; x++) {
-      const atEast = x === w - 1;
-      const atNorth = y === 0;
-      const close = atEast || (!atNorth && rng() > bias);
-      if (close) {
-        if (!atNorth) {
-          const cx = runStart + Math.floor(rng() * (x - runStart + 1));
-          carve(grid, cx, y, 'N');
-        }
-        runStart = x + 1;
-      } else {
-        carve(grid, x, y, 'E');
-      }
-    }
-  }
-  return grid;
-}
-
-const ALGORITHMS = {
-  backtracking, prims, kruskals, wilsons, division: recursiveDivision, sidewinder,
-};
-
-function solvePath(grid) {
-  const h = grid.length, w = grid[0].length;
-  const prev = Array.from({ length: h }, () => Array(w).fill(null));
-  const visited = Array.from({ length: h }, () => Array(w).fill(false));
-  visited[0][0] = true;
-  const queue = [[0, 0]];
-  let head = 0;
-  const ex = w - 1, ey = h - 1;
-  while (head < queue.length) {
-    const [x, y] = queue[head++];
-    if (x === ex && y === ey) break;
-    for (const d of DIRS) {
-      if (grid[y][x][d]) continue;
-      const nx = x + DX[d], ny = y + DY[d];
-      if (nx < 0 || nx >= w || ny < 0 || ny >= h || visited[ny][nx]) continue;
-      visited[ny][nx] = true;
-      prev[ny][nx] = [x, y];
-      queue.push([nx, ny]);
-    }
-  }
-  const path = [];
-  let cur = [ex, ey];
-  while (cur) { path.push(cur); cur = prev[cur[1]][cur[0]]; }
-  return path.reverse();
-}
-
-function render(canvas, grid, cellSize, showSolution) {
-  const h = grid.length, w = grid[0].length;
-  const wallThick = Math.max(1, Math.floor(cellSize / 11));
-  const totalW = w * cellSize + wallThick;
-  const totalH = h * cellSize + wallThick;
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = totalW * dpr;
-  canvas.height = totalH * dpr;
-  canvas.style.width = totalW + 'px';
-  canvas.style.aspectRatio = totalW + ' / ' + totalH;
-  canvas.style.removeProperty('height');
-  const ctx = canvas.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, totalW, totalH);
-
-  const off = wallThick / 2;
-  ctx.strokeStyle = '#141414';
-  ctx.lineWidth = wallThick;
-  ctx.lineCap = 'square';
-  ctx.beginPath();
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const x0 = x * cellSize + off, y0 = y * cellSize + off;
-      const x1 = x0 + cellSize, y1 = y0 + cellSize;
-      if (grid[y][x].N) { ctx.moveTo(x0 - off, y0); ctx.lineTo(x1 + off, y0); }
-      if (grid[y][x].W) { ctx.moveTo(x0, y0 - off); ctx.lineTo(x0, y1 + off); }
-      if (x === w - 1 && grid[y][x].E) { ctx.moveTo(x1, y0 - off); ctx.lineTo(x1, y1 + off); }
-      if (y === h - 1 && grid[y][x].S) { ctx.moveTo(x0 - off, y1); ctx.lineTo(x1 + off, y1); }
-    }
-  }
-  ctx.stroke();
-
-  if (showSolution) {
-    const path = solvePath(grid);
-    ctx.strokeStyle = 'rgba(255, 170, 20, 0.55)';
-    ctx.lineWidth = Math.max(2, cellSize * 0.35);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+  // ── 공통 유틸 ────────────────────────────────────
+  // wobbly 라인: 점 사이 중간점에 jitter 추가
+  function wobblyLine(ctx, x1, y1, x2, y2, amp, seed) {
+    const steps = Math.max(2, Math.floor(Math.hypot(x2 - x1, y2 - y1) / 8));
     ctx.beginPath();
-    for (let i = 0; i < path.length; i++) {
-      const [x, y] = path[i];
-      const cx = x * cellSize + cellSize / 2 + off;
-      const cy = y * cellSize + cellSize / 2 + off;
-      if (i === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
+    ctx.moveTo(x1, y1);
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const px = x1 + (x2 - x1) * t;
+      const py = y1 + (y2 - y1) * t;
+      // deterministic jitter
+      const h = Math.sin(seed + i * 12.9898) * 43758.5453;
+      const j1 = (h - Math.floor(h) - 0.5) * amp;
+      const h2 = Math.sin(seed + i * 78.233) * 43758.5453;
+      const j2 = (h2 - Math.floor(h2) - 0.5) * amp;
+      // perpendicular jitter
+      const dx = (y2 - y1), dy = -(x2 - x1);
+      const n = Math.hypot(dx, dy) || 1;
+      ctx.lineTo(px + (dx / n) * j1, py + (dy / n) * j1 + j2 * 0.2);
     }
+    ctx.lineTo(x2, y2);
     ctx.stroke();
   }
 
-  const pad = Math.max(3, cellSize / 5);
-  ctx.fillStyle = '#3cb450';
-  ctx.beginPath();
-  ctx.arc(cellSize / 2 + off, cellSize / 2 + off, cellSize / 2 - pad, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#e63232';
-  ctx.beginPath();
-  ctx.arc((w - 0.5) * cellSize + off, (h - 0.5) * cellSize + off, cellSize / 2 - pad, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-const $ = id => document.getElementById(id);
-const canvas = $('canvas');
-const statusEl = $('status');
-const descEl = $('desc');
-const algoParamsEl = $('algoParams');
-let currentParamValues = {};
-
-function updateAlgoUI() {
-  const algo = $('algo').value;
-  descEl.textContent = DESCRIPTIONS[algo] || '';
-  algoParamsEl.innerHTML = '';
-  const params = ALGO_PARAMS[algo] || [];
-  for (const p of params) {
-    const wrap = document.createElement('label');
-    wrap.className = 'field';
-    wrap.innerHTML = `${p.label} <span id="${p.id}_val" style="color:#2a2a2a">${(currentParamValues[p.id] ?? p.default)}</span>`;
-    const input = document.createElement('input');
-    input.type = p.type;
-    input.id = p.id;
-    input.min = p.min; input.max = p.max; input.step = p.step;
-    input.value = currentParamValues[p.id] ?? p.default;
-    input.addEventListener('input', e => {
-      currentParamValues[p.id] = parseFloat(e.target.value);
-      document.getElementById(p.id + '_val').textContent = parseFloat(e.target.value).toFixed(2);
-    });
-    wrap.appendChild(input);
-    algoParamsEl.appendChild(wrap);
-  }
-}
-
-function currentFilename() {
-  const algo = $('algo').value;
-  const w = $('width').value, h = $('height').value;
-  const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
-  return `maze_${algo}_${w}x${h}_${stamp}.png`;
-}
-
-function generate() {
-  const algo = $('algo').value;
-  const w = Math.max(3, Math.min(150, parseInt($('width').value) || 20));
-  const h = Math.max(3, Math.min(150, parseInt($('height').value) || 20));
-  const cellSize = Math.max(6, Math.min(80, parseInt($('cellSize').value) || 24));
-  const showSol = $('showSolution').checked;
-  const { rng, seed } = makeRng($('seed').value);
-
-  statusEl.textContent = '생성 중...';
-  setTimeout(() => {
-    const t0 = performance.now();
-    const grid = ALGORITHMS[algo](w, h, rng, currentParamValues);
-    render(canvas, grid, cellSize, showSol);
-    const ms = Math.round(performance.now() - t0);
-    statusEl.textContent = `${w}×${h} · ${algo} · ${ms}ms · seed ${seed}`;
-    if (window.matchMedia('(max-width: 768px)').matches) {
-      canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // ── 1. 크레용 놀이터 ────────────────────────────
+  function crayonPaper(ctx, W, H, opts) {
+    const { grid, solution, cell, theme, progress, mascot } = opts;
+    // paper background
+    ctx.fillStyle = theme.paper;
+    ctx.fillRect(0, 0, W, H);
+    // speckle texture
+    for (let i = 0; i < (W * H) / 180; i++) {
+      const x = Math.random() * W, y = Math.random() * H;
+      ctx.fillStyle = `rgba(120,90,60,${0.03 + Math.random() * 0.04})`;
+      ctx.fillRect(x, y, 1, 1);
     }
-  }, 10);
-}
 
-function canUseClipboard() {
-  return !!(navigator.clipboard && window.ClipboardItem && window.isSecureContext);
-}
+    const pad = cell * 0.6;
+    ctx.translate(pad, pad);
 
-async function copyToClipboard() {
-  statusEl.textContent = '복사 중...';
-  if (canUseClipboard()) {
-    try {
-      const item = new ClipboardItem({
-        'image/png': new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
-      });
-      await navigator.clipboard.write([item]);
-      statusEl.textContent = '클립보드에 복사됨 — 메시지에 붙여넣기 하세요';
-      return;
-    } catch (e) {
-      console.warn('clipboard write failed:', e);
-    }
-  }
-  statusEl.textContent = '클립보드 불가 (file:// 또는 미지원) — 공유로 전환';
-  await shareMaze();
-}
+    // walls: crayon-like, thick, slight offset doubled-stroke
+    const drawWall = (x1, y1, x2, y2, ci) => {
+      // shadow trace
+      ctx.strokeStyle = theme.wallShadow;
+      ctx.lineWidth = cell * 0.22;
+      ctx.lineCap = 'round';
+      wobblyLine(ctx, x1 + 1.2, y1 + 1.5, x2 + 1.2, y2 + 1.5, cell * 0.08, ci * 17);
+      // main
+      ctx.strokeStyle = theme.wall;
+      ctx.lineWidth = cell * 0.18;
+      wobblyLine(ctx, x1, y1, x2, y2, cell * 0.08, ci * 17);
+    };
 
-async function shareMaze() {
-  statusEl.textContent = '공유 준비 중...';
-  canvas.toBlob(async blob => {
-    if (!blob) { statusEl.textContent = '이미지 변환 실패'; return; }
-    const filename = currentFilename();
-    const file = new File([blob], filename, { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: '미로', text: '이 미로 풀어봐!' });
-        statusEl.textContent = '공유 완료';
-      } catch (e) {
-        if (e.name !== 'AbortError') statusEl.textContent = '공유 취소 또는 실패';
-        else statusEl.textContent = '';
+    let ci = 0;
+    for (let y = 0; y < grid.rows; y++) {
+      for (let x = 0; x < grid.cols; x++) {
+        const c = grid.cells[y][x];
+        const x0 = x * cell, y0 = y * cell, x1 = x0 + cell, y1 = y0 + cell;
+        if (c.walls.N) drawWall(x0, y0, x1, y0, ci++);
+        if (c.walls.W) drawWall(x0, y0, x0, y1, ci++);
+        if (y === grid.rows - 1 && c.walls.S) drawWall(x0, y1, x1, y1, ci++);
+        if (x === grid.cols - 1 && c.walls.E) drawWall(x1, y0, x1, y1, ci++);
       }
-    } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename; a.click();
-      URL.revokeObjectURL(url);
-      statusEl.textContent = '공유 기능 미지원 — 파일로 저장됨';
     }
-  }, 'image/png');
+
+    // solution: colorful dotted trail
+    if (solution) {
+      ctx.globalAlpha = 0.9;
+      const palette = theme.trail;
+      for (let i = 0; i < solution.length; i++) {
+        const c = solution[i];
+        const cx = c.x * cell + cell / 2;
+        const cy = c.y * cell + cell / 2;
+        ctx.fillStyle = palette[i % palette.length];
+        ctx.beginPath();
+        ctx.arc(cx, cy, cell * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // start & end mascots
+    const drawMascot = (c, emoji, label, color) => {
+      const cx = c.x * cell + cell / 2;
+      const cy = c.y * cell + cell / 2;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cell * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = `${Math.floor(cell * 0.55)}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(emoji, cx, cy + cell * 0.03);
+    };
+    drawMascot(grid.cells[0][0], mascot.start, '출발', theme.startBg);
+    drawMascot(grid.cells[grid.rows - 1][grid.cols - 1], mascot.end, '도착', theme.endBg);
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  // ── 2. 젤리 팝 ────────────────────────────────
+  function jellyPop(ctx, W, H, opts) {
+    const { grid, solution, cell, theme } = opts;
+    // gradient bg
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, theme.bgA);
+    g.addColorStop(1, theme.bgB);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    const pad = cell * 0.7;
+    ctx.translate(pad, pad);
+
+    // rounded walls using path segments; draw as joined rounded-rect-ish shapes
+    // Strategy: draw each cell's walls as rounded lines
+    ctx.strokeStyle = theme.wall;
+    ctx.lineWidth = cell * 0.2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // outer glow
+    ctx.shadowColor = theme.glow;
+    ctx.shadowBlur = cell * 0.6;
+
+    for (let y = 0; y < grid.rows; y++) {
+      for (let x = 0; x < grid.cols; x++) {
+        const c = grid.cells[y][x];
+        const x0 = x * cell, y0 = y * cell, x1 = x0 + cell, y1 = y0 + cell;
+        const m = cell * 0.08;
+        if (c.walls.N) { ctx.beginPath(); ctx.moveTo(x0 + m, y0); ctx.lineTo(x1 - m, y0); ctx.stroke(); }
+        if (c.walls.W) { ctx.beginPath(); ctx.moveTo(x0, y0 + m); ctx.lineTo(x0, y1 - m); ctx.stroke(); }
+        if (y === grid.rows - 1 && c.walls.S) { ctx.beginPath(); ctx.moveTo(x0 + m, y1); ctx.lineTo(x1 - m, y1); ctx.stroke(); }
+        if (x === grid.cols - 1 && c.walls.E) { ctx.beginPath(); ctx.moveTo(x1, y0 + m); ctx.lineTo(x1, y1 - m); ctx.stroke(); }
+      }
+    }
+    ctx.shadowBlur = 0;
+
+    // solution — rainbow gradient line
+    if (solution && solution.length > 1) {
+      const grad = ctx.createLinearGradient(0, 0, grid.cols * cell, grid.rows * cell);
+      theme.trail.forEach((c, i) => grad.addColorStop(i / (theme.trail.length - 1), c));
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = cell * 0.3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      solution.forEach((c, i) => {
+        const px = c.x * cell + cell / 2, py = c.y * cell + cell / 2;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+    }
+
+    // start / end as glowing jelly dots
+    const drawDot = (c, color) => {
+      const cx = c.x * cell + cell / 2, cy = c.y * cell + cell / 2;
+      const rg = ctx.createRadialGradient(cx, cy, cell * 0.1, cx, cy, cell * 0.5);
+      rg.addColorStop(0, '#fff');
+      rg.addColorStop(0.4, color);
+      rg.addColorStop(1, color + '00');
+      ctx.fillStyle = rg;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cell * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    drawDot(grid.cells[0][0], theme.start);
+    drawDot(grid.cells[grid.rows - 1][grid.cols - 1], theme.end);
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  // ── 3. 스티커북 ────────────────────────────────
+  function stickerBook(ctx, W, H, opts) {
+    const { grid, solution, cell, theme } = opts;
+    // notebook bg
+    ctx.fillStyle = theme.paper;
+    ctx.fillRect(0, 0, W, H);
+    // notebook lines
+    ctx.strokeStyle = 'rgba(90,120,160,0.15)';
+    ctx.lineWidth = 1;
+    for (let y = 20; y < H; y += 24) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    // left margin
+    ctx.strokeStyle = 'rgba(220,100,120,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(60, 0); ctx.lineTo(60, H); ctx.stroke();
+
+    const pad = cell * 0.8;
+    ctx.translate(Math.max(pad, 70), pad);
+
+    // walls — bold black marker with slight ink bleed
+    ctx.strokeStyle = theme.wall;
+    ctx.lineWidth = cell * 0.15;
+    ctx.lineCap = 'round';
+
+    for (let y = 0; y < grid.rows; y++) {
+      for (let x = 0; x < grid.cols; x++) {
+        const c = grid.cells[y][x];
+        const x0 = x * cell, y0 = y * cell, x1 = x0 + cell, y1 = y0 + cell;
+        if (c.walls.N) wobblyLine(ctx, x0, y0, x1, y0, cell * 0.04, (x + y) * 31);
+        if (c.walls.W) wobblyLine(ctx, x0, y0, x0, y1, cell * 0.04, (x + y) * 53);
+        if (y === grid.rows - 1 && c.walls.S) wobblyLine(ctx, x0, y1, x1, y1, cell * 0.04, (x + y) * 71);
+        if (x === grid.cols - 1 && c.walls.E) wobblyLine(ctx, x1, y0, x1, y1, cell * 0.04, (x + y) * 89);
+      }
+    }
+
+    // solution — dashed highlighter
+    if (solution && solution.length > 1) {
+      ctx.strokeStyle = theme.highlight;
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.lineWidth = cell * 0.55;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      solution.forEach((c, i) => {
+        const px = c.x * cell + cell / 2, py = c.y * cell + cell / 2;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // stickers for start/end
+    const drawSticker = (c, color, emoji) => {
+      const cx = c.x * cell + cell / 2, cy = c.y * cell + cell / 2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(((c.x + c.y) % 2 ? 0.12 : -0.1));
+      // sticker border (white)
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(0, 0, cell * 0.44, 0, Math.PI * 2);
+      ctx.fill();
+      // inner color
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(0, 0, cell * 0.36, 0, Math.PI * 2);
+      ctx.fill();
+      // shadow
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetY = 2;
+      // emoji
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.font = `${Math.floor(cell * 0.5)}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(emoji, 0, cell * 0.02);
+      ctx.restore();
+    };
+    drawSticker(grid.cells[0][0], theme.start, '🏁');
+    drawSticker(grid.cells[grid.rows - 1][grid.cols - 1], theme.end, '⭐');
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  return { crayonPaper, jellyPop, stickerBook };
+})();
+
+window.MazeRenderers = MazeRenderers;
+
+</script>
+<script type="text/babel">
+// maze-ui.jsx — UI components (ControlPanel, Gallery, TopTitle, Toast, Decor, AlgoInfoModal)
+
+// ── 배경 장식 ─────────────────────────────────────
+function BackgroundDecor({ variant }) {
+  if (variant === 'crayon') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 40, right: 80, fontSize: 48, transform: 'rotate(15deg)', opacity: 0.6 }}>☀️</div>
+        <div style={{ position: 'absolute', bottom: 120, left: 60, fontSize: 36, transform: 'rotate(-12deg)', opacity: 0.5 }}>🌸</div>
+        <div style={{ position: 'absolute', top: 200, left: 30, fontSize: 28, opacity: 0.4 }}>✏️</div>
+        <div style={{ position: 'absolute', bottom: 40, right: 40, fontSize: 32, transform: 'rotate(8deg)', opacity: 0.5 }}>🎨</div>
+      </div>
+    );
+  }
+  if (variant === 'jelly') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {[...Array(18)].map((_, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            left: (i * 137) % 100 + '%',
+            top: (i * 73) % 100 + '%',
+            width: 4, height: 4, borderRadius: '50%',
+            background: ['#ff6ec7', '#4dd0ff', '#b794f6', '#ffd93d'][i % 4],
+            opacity: 0.6,
+            boxShadow: '0 0 8px currentColor',
+            animation: `twinkle ${2 + (i % 3)}s ease-in-out ${i * 0.2}s infinite`,
+          }} />
+        ))}
+      </div>
+    );
+  }
+  if (variant === 'sticker') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 60, right: 60, width: 80, height: 80, background: '#f4a261', borderRadius: '50%', opacity: 0.15, transform: 'rotate(12deg)' }} />
+        <div style={{ position: 'absolute', bottom: 80, left: 80, width: 60, height: 60, background: '#2a9d8f', borderRadius: 12, opacity: 0.15, transform: 'rotate(-8deg)' }} />
+      </div>
+    );
+  }
+  return null;
 }
 
-function downloadPng() {
-  canvas.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = currentFilename(); a.click();
-    URL.revokeObjectURL(url);
-  }, 'image/png');
+// ── 상단 타이틀 ───────────────────────────────────
+function TopTitle({ variant, theme }) {
+  if (variant === 'crayon') {
+    return (
+      <div style={{
+        position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%) rotate(-1.5deg)',
+        fontFamily: theme.fontAccent, pointerEvents: 'none', textAlign: 'center',
+      }}>
+        <div style={{ fontSize: 38, fontWeight: 700, color: theme.accent, letterSpacing: -1 }}>
+          🖍️ 미로 놀이터
+        </div>
+        <div style={{ fontSize: 14, color: theme.text, opacity: 0.6, marginTop: -4 }}>
+          토끼가 치즈를 찾으러 가요
+        </div>
+      </div>
+    );
+  }
+  if (variant === 'jelly') {
+    return (
+      <div style={{
+        position: 'absolute', top: 24, left: '50%', transform: 'translateX(-50%)',
+        textAlign: 'center', pointerEvents: 'none',
+      }}>
+        <div style={{
+          fontSize: 32, fontWeight: 800, letterSpacing: 4,
+          background: 'linear-gradient(90deg, #ff6ec7, #4dd0ff, #ffd93d)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}>MAZE · POP</div>
+        <div style={{ fontSize: 12, letterSpacing: 8, color: theme.accent2, opacity: 0.7, marginTop: 4 }}>
+          미 · 로 · 팝
+        </div>
+      </div>
+    );
+  }
+  if (variant === 'sticker') {
+    return (
+      <div style={{
+        position: 'absolute', top: 18, left: 24,
+        fontFamily: theme.fontAccent, pointerEvents: 'none',
+      }}>
+        <div style={{ fontSize: 30, fontWeight: 700, color: theme.text, lineHeight: 1 }}>
+          오늘의 <span style={{ color: theme.accent }}>미로</span>
+        </div>
+        <div style={{ fontSize: 13, color: theme.text, opacity: 0.5, marginTop: 4 }}>
+          No. {new Date().getMonth() + 1}.{new Date().getDate()} · 내가 만든 길찾기
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
 
-$('algo').addEventListener('change', updateAlgoUI);
-$('generate').addEventListener('click', generate);
-$('copy').addEventListener('click', copyToClipboard);
-$('share').addEventListener('click', shareMaze);
-$('download').addEventListener('click', downloadPng);
-$('print').addEventListener('click', () => window.print());
+// ── 슬라이더 ──────────────────────────────────────
+function Slider({ label, value, min, max, step = 1, onChange, color, variant, suffix = '' }) {
+  const pct = ((value - min) / (max - min)) * 100;
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6, opacity: 0.75 }}>
+        <span>{label}</span>
+        <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{value}{suffix}</span>
+      </div>
+      <div style={{ position: 'relative', height: 24, display: 'flex', alignItems: 'center' }}>
+        <div style={{
+          position: 'absolute', left: 0, right: 0, height: variant === 'jelly' ? 6 : 4,
+          background: variant === 'jelly' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          borderRadius: 99,
+        }} />
+        <div style={{
+          position: 'absolute', left: 0, width: pct + '%', height: variant === 'jelly' ? 6 : 4,
+          background: variant === 'jelly'
+            ? `linear-gradient(90deg, ${color}, ${color}dd)`
+            : color,
+          borderRadius: 99,
+          boxShadow: variant === 'jelly' ? `0 0 12px ${color}` : 'none',
+        }} />
+        <input type="range" min={min} max={max} step={step} value={value}
+          onChange={(e) => onChange(+e.target.value)}
+          style={{
+            position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%',
+          }} />
+        <div style={{
+          position: 'absolute', left: `calc(${pct}% - 9px)`,
+          width: 18, height: 18, borderRadius: '50%',
+          background: variant === 'jelly' ? color : '#fff',
+          border: variant === 'jelly' ? '2px solid #fff' : `3px solid ${color}`,
+          boxShadow: variant === 'jelly' ? `0 0 10px ${color}` : '0 2px 6px rgba(0,0,0,0.15)',
+          pointerEvents: 'none',
+        }} />
+      </div>
+    </div>
+  );
+}
 
-updateAlgoUI();
-generate();
+// ── 컨트롤 패널 ───────────────────────────────────
+function ControlPanel(props) {
+  const { variant, theme, cols, setCols, rows, setRows, cell, setCell,
+    algo, setAlgo, seed, setSeed, showSolution, setShowSolution,
+    animating, onBuild, onCopy, onDownload, onShare, onPrint,
+    onSaveGallery, onShowAlgoInfo } = props;
+  const [expanded, setExpanded] = React.useState(true);
+
+  const panelStyle = variant === 'jelly'
+    ? {
+      background: 'rgba(30,20,60,0.7)',
+      backdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(180,140,255,0.15)',
+      color: theme.text,
+    }
+    : variant === 'crayon'
+      ? {
+        background: '#fff',
+        border: `2.5px solid ${theme.text}`,
+        boxShadow: '6px 6px 0 rgba(61,47,31,0.12)',
+        color: theme.text,
+      }
+      : {
+        background: '#fff',
+        border: `1.5px solid ${theme.text}`,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+        color: theme.text,
+      };
+
+  const borderRadius = variant === 'jelly' ? 20 : variant === 'crayon' ? 20 : 10;
+
+  return (
+    <div style={{
+      position: 'absolute', top: 80, right: 20, width: 300,
+      maxHeight: 'calc(100vh - 100px)', overflowY: 'auto',
+      padding: 20, borderRadius,
+      fontSize: 13,
+      transform: variant === 'crayon' && expanded ? 'rotate(-0.8deg)' : 'none',
+      transition: 'transform 0.3s',
+      ...panelStyle,
+    }}>
+      {/* 헤더 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div style={{
+          fontFamily: theme.fontAccent, fontSize: 18, fontWeight: 700,
+          color: theme.accent,
+        }}>
+          {variant === 'crayon' ? '✏️ 만들기' : variant === 'jelly' ? '⚙ CONTROLS' : '📝 만들기 설정'}
+        </div>
+        <button onClick={() => setExpanded(!expanded)} style={{
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          fontSize: 18, color: theme.text, opacity: 0.5,
+        }}>{expanded ? '−' : '+'}</button>
+      </div>
+
+      {expanded && (
+        <>
+          {/* 알고리즘 선택 */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 12, marginBottom: 6, opacity: 0.75, display: 'flex', justifyContent: 'space-between' }}>
+              <span>길 만드는 방법</span>
+              <button onClick={onShowAlgoInfo} style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: theme.accent, fontSize: 11, padding: 0, textDecoration: 'underline',
+              }}>설명 보기</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {Object.entries(MazeEngine.ALGORITHMS).map(([key, a]) => (
+                <button key={key} onClick={() => setAlgo(key)} style={{
+                  padding: '8px 4px', fontSize: 11, cursor: 'pointer',
+                  borderRadius: variant === 'jelly' ? 10 : 8,
+                  border: algo === key
+                    ? `2px solid ${theme.accent}`
+                    : variant === 'jelly' ? '1px solid rgba(255,255,255,0.1)' : '1.5px solid rgba(0,0,0,0.1)',
+                  background: algo === key
+                    ? variant === 'jelly' ? theme.accent + '33' : theme.accent + '22'
+                    : variant === 'jelly' ? 'rgba(255,255,255,0.04)' : '#fafafa',
+                  color: theme.text,
+                  fontFamily: 'inherit',
+                  fontWeight: algo === key ? 700 : 500,
+                  transition: 'all 0.15s',
+                  lineHeight: 1.2,
+                  textAlign: 'center',
+                }}>
+                  <div>{a.name.split(' ')[0]}</div>
+                  <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>{a.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Slider label="가로 (칸)" value={cols} min={5} max={40}
+            onChange={setCols} color={theme.accent} variant={variant} />
+          <Slider label="세로 (칸)" value={rows} min={5} max={30}
+            onChange={setRows} color={theme.accent2} variant={variant} />
+          <Slider label="셀 크기 (px)" value={cell} min={14} max={40}
+            onChange={setCell} color={theme.accent3} variant={variant} suffix="px" />
+
+          {/* 시드 */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 12, marginBottom: 6, opacity: 0.75 }}>시드 (비우면 랜덤)</div>
+            <input type="text" value={seed} onChange={(e) => setSeed(e.target.value)}
+              placeholder="예: hello"
+              style={{
+                width: '100%', padding: '8px 10px',
+                borderRadius: variant === 'jelly' ? 10 : 6,
+                border: variant === 'jelly' ? '1px solid rgba(255,255,255,0.15)' : `1.5px solid ${theme.text}22`,
+                background: variant === 'jelly' ? 'rgba(255,255,255,0.06)' : '#fafafa',
+                color: theme.text, fontSize: 12, fontFamily: 'monospace',
+                boxSizing: 'border-box', outline: 'none',
+              }} />
+          </div>
+
+          {/* 정답 표시 토글 */}
+          <label style={{
+            display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+            padding: '8px 10px', borderRadius: variant === 'jelly' ? 10 : 6,
+            background: variant === 'jelly' ? 'rgba(255,255,255,0.04)' : '#f7f5f0',
+            cursor: 'pointer',
+          }}>
+            <div style={{
+              width: 34, height: 18, borderRadius: 99,
+              background: showSolution ? theme.accent3 : (variant === 'jelly' ? 'rgba(255,255,255,0.2)' : '#ccc'),
+              position: 'relative', transition: 'background 0.2s',
+            }}>
+              <div style={{
+                width: 14, height: 14, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 2, left: showSolution ? 18 : 2,
+                transition: 'left 0.2s',
+              }} />
+            </div>
+            <span style={{ fontSize: 12 }}>🔍 정답 경로 표시</span>
+            <input type="checkbox" checked={showSolution}
+              onChange={(e) => setShowSolution(e.target.checked)}
+              style={{ display: 'none' }} />
+          </label>
+
+          {/* 만들기 버튼 */}
+          <button onClick={onBuild} disabled={animating} style={{
+            width: '100%', padding: '14px 20px',
+            fontFamily: theme.fontAccent, fontSize: 18, fontWeight: 700,
+            borderRadius: variant === 'jelly' ? 14 : 12,
+            border: 'none', cursor: animating ? 'wait' : 'pointer',
+            background: animating
+              ? variant === 'jelly' ? 'rgba(255,255,255,0.2)' : '#ddd'
+              : variant === 'jelly'
+                ? `linear-gradient(135deg, ${theme.accent}, ${theme.accent3})`
+                : theme.accent,
+            color: '#fff', boxShadow: animating
+              ? 'none'
+              : variant === 'jelly'
+                ? `0 6px 20px ${theme.accent}66`
+                : variant === 'crayon' ? `4px 4px 0 ${theme.text}44` : '0 4px 12px rgba(0,0,0,0.15)',
+            transform: animating ? 'none' : 'translateY(0)',
+            transition: 'all 0.15s',
+            marginBottom: 10,
+          }}>
+            {animating ? '✨ 만드는 중...' : variant === 'crayon' ? '🐰 미로 만들기!' : variant === 'jelly' ? '✦ GENERATE ✦' : '✏️ 미로 그리기'}
+          </button>
+
+          {/* 액션 버튼 그룹 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
+            <ActionBtn variant={variant} theme={theme} onClick={onCopy} icon="📋" label="복사" />
+            <ActionBtn variant={variant} theme={theme} onClick={onDownload} icon="💾" label="PNG 저장" />
+            <ActionBtn variant={variant} theme={theme} onClick={onShare} icon="💬" label="공유" />
+            <ActionBtn variant={variant} theme={theme} onClick={onPrint} icon="🖨️" label="인쇄" />
+          </div>
+          <button onClick={onSaveGallery} style={{
+            width: '100%', padding: '8px', fontSize: 12,
+            borderRadius: 8, cursor: 'pointer',
+            border: variant === 'jelly' ? '1px dashed rgba(255,255,255,0.2)' : `1.5px dashed ${theme.accent2}`,
+            background: 'transparent', color: theme.text,
+            fontFamily: 'inherit',
+          }}>
+            🎨 내 갤러리에 담기
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ActionBtn({ variant, theme, onClick, icon, label }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '8px', fontSize: 11, cursor: 'pointer',
+      borderRadius: variant === 'jelly' ? 10 : 8,
+      border: variant === 'jelly' ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.1)',
+      background: variant === 'jelly' ? 'rgba(255,255,255,0.06)' : '#f7f5f0',
+      color: theme.text, fontFamily: 'inherit',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+      transition: 'all 0.12s',
+    }}>
+      <span>{icon}</span><span>{label}</span>
+    </button>
+  );
+}
+
+// ── 갤러리 ────────────────────────────────────────
+function Gallery({ variant, theme, items, onLoad, onDelete }) {
+  const [open, setOpen] = React.useState(false);
+  if (!items.length) {
+    return (
+      <div style={{
+        position: 'absolute', bottom: 20, left: 20, fontSize: 12,
+        opacity: 0.5, fontFamily: theme.fontAccent,
+      }}>
+        🎨 갤러리가 비어있어요 — '내 갤러리에 담기'로 미로를 모아보세요!
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      position: 'absolute', bottom: 20, left: 20, maxWidth: 'calc(100vw - 360px)',
+    }}>
+      <button onClick={() => setOpen(!open)} style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '8px 14px', borderRadius: 99,
+        background: variant === 'jelly' ? 'rgba(30,20,60,0.7)' : '#fff',
+        backdropFilter: variant === 'jelly' ? 'blur(20px)' : 'none',
+        border: variant === 'jelly' ? '1px solid rgba(255,255,255,0.15)' : `1.5px solid ${theme.text}33`,
+        color: theme.text, cursor: 'pointer', fontFamily: theme.fontAccent, fontSize: 14,
+        fontWeight: 700, marginBottom: 10,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      }}>
+        🎨 내 갤러리 ({items.length})
+        <span style={{ fontSize: 10 }}>{open ? '▼' : '▲'}</span>
+      </button>
+      {open && (
+        <div style={{
+          display: 'flex', gap: 10, flexWrap: 'wrap', maxWidth: 520,
+          padding: 12, borderRadius: 14,
+          background: variant === 'jelly' ? 'rgba(30,20,60,0.7)' : '#fff',
+          backdropFilter: variant === 'jelly' ? 'blur(20px)' : 'none',
+          border: variant === 'jelly' ? '1px solid rgba(255,255,255,0.15)' : `1.5px solid ${theme.text}22`,
+        }}>
+          {items.map((it) => (
+            <div key={it.id} style={{ position: 'relative' }}>
+              <img src={it.thumb} alt="" onClick={() => onLoad(it)} style={{
+                width: 72, height: 72, objectFit: 'cover', cursor: 'pointer',
+                borderRadius: 8, border: `2px solid ${theme.text}22`,
+                background: '#fff',
+              }} />
+              <button onClick={() => onDelete(it.id)} style={{
+                position: 'absolute', top: -6, right: -6, width: 20, height: 20,
+                borderRadius: '50%', border: 'none', background: theme.accent,
+                color: '#fff', fontSize: 11, cursor: 'pointer', lineHeight: 1,
+              }}>×</button>
+              <div style={{
+                position: 'absolute', bottom: 2, left: 2, right: 2,
+                fontSize: 8, color: '#fff', textAlign: 'center',
+                background: 'rgba(0,0,0,0.5)', padding: '1px 2px', borderRadius: 3,
+              }}>{it.cols}×{it.rows}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 알고리즘 설명 모달 ────────────────────────────
+function AlgoInfoModal({ variant, theme, algo, onClose }) {
+  const info = {
+    backtracking: { title: 'Recursive Backtracking', emoji: '🐍', text: '한 칸씩 앞으로 나가다가 막히면 돌아와요. 길고 구불구불한 미로가 만들어져요!' },
+    prims: { title: "Prim's 알고리즘", emoji: '🌳', text: '가까운 곳부터 조금씩 뚫어나가요. 갈림길이 많아서 헷갈리는 미로가 돼요.' },
+    kruskals: { title: "Kruskal's 알고리즘", emoji: '🔗', text: '아무 벽이나 뚫어보고 연결되면 OK. 짧고 균일한 경로의 미로가 만들어져요.' },
+    wilsons: { title: "Wilson's 알고리즘", emoji: '🎲', text: '무작위로 걷다가 이미 만든 길을 만나면 확정! 가장 공평한 미로예요.' },
+    division: { title: 'Recursive Division', emoji: '🏠', text: '전체 공간을 반씩 나누면서 문만 남겨요. 방이 여러 개 있는 미로가 돼요.' },
+    sidewinder: { title: 'Sidewinder', emoji: '🌊', text: '좌우로 흐르다가 가끔 위로 올라가요. 물결치는 듯한 수평 흐름의 미로!' },
+  };
+  const d = info[algo];
+  return (
+    <div onClick={onClose} style={{
+      position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)',
+      backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', zIndex: 100,
+    }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: variant === 'jelly' ? 'rgba(30,20,60,0.95)' : '#fff',
+        border: variant === 'jelly' ? '1px solid rgba(255,255,255,0.15)' : `2px solid ${theme.text}`,
+        borderRadius: variant === 'crayon' ? 20 : 14,
+        padding: 30, maxWidth: 420, textAlign: 'center',
+        color: theme.text, fontFamily: theme.fontBody,
+        transform: variant === 'crayon' ? 'rotate(-1deg)' : 'none',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+      }}>
+        <div style={{ fontSize: 64, marginBottom: 12 }}>{d.emoji}</div>
+        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 10, fontFamily: theme.fontAccent, color: theme.accent }}>
+          {d.title}
+        </div>
+        <div style={{ fontSize: 14, lineHeight: 1.6, opacity: 0.85, marginBottom: 20 }}>
+          {d.text}
+        </div>
+        <button onClick={onClose} style={{
+          padding: '10px 30px', borderRadius: 99, border: 'none',
+          background: theme.accent, color: '#fff', cursor: 'pointer',
+          fontFamily: theme.fontAccent, fontSize: 14, fontWeight: 700,
+        }}>알겠어요! 👍</button>
+      </div>
+    </div>
+  );
+}
+
+// ── 토스트 ────────────────────────────────────────
+function Toast({ variant, theme, msg }) {
+  return (
+    <div style={{
+      position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)',
+      padding: '12px 24px', borderRadius: 99,
+      background: variant === 'jelly' ? 'rgba(30,20,60,0.9)' : theme.text,
+      color: '#fff', fontSize: 14, fontFamily: theme.fontAccent, fontWeight: 700,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.25)', zIndex: 200,
+      animation: 'toastIn 0.3s ease-out',
+    }}>{msg}</div>
+  );
+}
+
+Object.assign(window, {
+  BackgroundDecor, TopTitle, ControlPanel, Gallery, AlgoInfoModal, Toast,
+});
+
+</script>
+<script type="text/babel">
+// maze-app.jsx — 공통 미로 앱 (3가지 variant로 렌더)
+// props: variant = 'crayon' | 'jelly' | 'sticker'
+
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ── 테마 ──────────────────────────────────────────
+const THEMES = {
+  crayon: {
+    name: '크레용 놀이터',
+    bg: '#faf3e2',
+    panelBg: '#ffffff',
+    accent: '#ff6b6b',
+    accent2: '#ffd93d',
+    accent3: '#6bcb77',
+    accent4: '#a78bfa',
+    text: '#3d2f1f',
+    fontBody: '"Pretendard", "Noto Sans KR", sans-serif',
+    fontAccent: '"Gaegu", "Pretendard", sans-serif',
+    canvas: {
+      paper: '#fef9ec',
+      wall: '#3d2f1f',
+      wallShadow: 'rgba(255,107,107,0.3)',
+      startBg: '#ffd93d',
+      endBg: '#ff6b6b',
+      trail: ['#ff6b6b', '#ffd93d', '#6bcb77', '#4ecdc4', '#a78bfa'],
+    },
+    mascot: { start: '🐰', end: '🧀' },
+    renderer: 'crayonPaper',
+  },
+  jelly: {
+    name: '젤리 팝',
+    bg: '#1a1033',
+    panelBg: 'rgba(255,255,255,0.08)',
+    accent: '#ff6ec7',
+    accent2: '#4dd0ff',
+    accent3: '#b794f6',
+    accent4: '#ffd93d',
+    text: '#f4f1ff',
+    fontBody: '"Pretendard", "Noto Sans KR", sans-serif',
+    fontAccent: '"Pretendard", sans-serif',
+    canvas: {
+      bgA: '#2d1b5e',
+      bgB: '#1a1033',
+      wall: '#f4f1ff',
+      glow: 'rgba(180,140,255,0.5)',
+      start: '#4dd0ff',
+      end: '#ff6ec7',
+      trail: ['#ff6ec7', '#b794f6', '#4dd0ff', '#ffd93d', '#ff6ec7'],
+    },
+    mascot: { start: '🚀', end: '🌟' },
+    renderer: 'jellyPop',
+  },
+  sticker: {
+    name: '스티커북',
+    bg: '#f6f1e7',
+    panelBg: '#ffffff',
+    accent: '#e63946',
+    accent2: '#f4a261',
+    accent3: '#2a9d8f',
+    accent4: '#264653',
+    text: '#1d2d44',
+    fontBody: '"Pretendard", "Noto Sans KR", sans-serif',
+    fontAccent: '"Gaegu", "Pretendard", sans-serif',
+    canvas: {
+      paper: '#fdfcf5',
+      wall: '#1d2d44',
+      highlight: 'rgba(255,230,0,0.6)',
+      start: '#e63946',
+      end: '#f4a261',
+    },
+    mascot: { start: '🏁', end: '⭐' },
+    renderer: 'stickerBook',
+  },
+};
+
+// ── 메인 앱 ───────────────────────────────────────
+function MazeApp({ variant = 'crayon' }) {
+  const theme = THEMES[variant];
+  const [cols, setCols] = useState(20);
+  const [rows, setRows] = useState(14);
+  const [cell, setCell] = useState(28);
+  const [algo, setAlgo] = useState('backtracking');
+  const [seed, setSeed] = useState('');
+  const [showSolution, setShowSolution] = useState(false);
+  const [animating, setAnimating] = useState(false);
+  const [progress, setProgress] = useState(1);
+  const [gallery, setGallery] = useState([]);
+  const [showAlgoInfo, setShowAlgoInfo] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const canvasRef = useRef(null);
+  const stateRef = useRef(null);
+  const animRef = useRef(null);
+  const containerRef = useRef(null);
+  const [displaySize, setDisplaySize] = useState({ w: 800, h: 600 });
+
+  // 반응형 셀 크기
+  useEffect(() => {
+    const update = () => {
+      if (!containerRef.current) return;
+      const w = containerRef.current.clientWidth;
+      const h = containerRef.current.clientHeight;
+      const maxCell = Math.min(
+        Math.floor((w - 80) / cols),
+        Math.floor((h - 80) / rows),
+        cell + 10
+      );
+      const actual = Math.max(14, Math.min(maxCell, cell));
+      setDisplaySize({ w, h, actual });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [cols, rows, cell]);
+
+  // 렌더 함수
+  const render = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !stateRef.current) return;
+    const { grid } = stateRef.current;
+    const c = displaySize.actual || cell;
+    const pad = c * 0.8;
+    const W = cols * c + pad * 2;
+    const H = rows * c + pad * 2;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const sol = showSolution && !animating
+      ? MazeEngine.solve(grid, grid.cells[0][0], grid.cells[rows - 1][cols - 1])
+      : null;
+    MazeRenderers[theme.renderer](ctx, W, H, {
+      grid, solution: sol, cell: c, theme: theme.canvas,
+      mascot: theme.mascot, progress,
+    });
+  }, [cols, rows, cell, showSolution, animating, theme, progress, displaySize.actual]);
+
+  // 미로 생성 (애니메이션)
+  const build = useCallback((animated = true) => {
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    const useSeed = seed || Math.floor(Math.random() * 1e8).toString(36);
+    const s = MazeEngine.build({ cols, rows, algo, seed: useSeed });
+    stateRef.current = s;
+    setSeed(useSeed);
+
+    if (!animated) {
+      while (!s.gen.next().done) {}
+      setAnimating(false);
+      setProgress(1);
+      render();
+      return;
+    }
+
+    setAnimating(true);
+    setProgress(0);
+    const totalSteps = cols * rows * 2;
+    let stepCount = 0;
+    const stepsPerFrame = Math.max(1, Math.floor(cols * rows / 120));
+
+    const loop = () => {
+      for (let i = 0; i < stepsPerFrame; i++) {
+        const r = s.gen.next();
+        stepCount++;
+        if (r.done) {
+          setAnimating(false);
+          setProgress(1);
+          render();
+          return;
+        }
+      }
+      setProgress(Math.min(0.99, stepCount / totalSteps));
+      render();
+      animRef.current = requestAnimationFrame(loop);
+    };
+    loop();
+  }, [cols, rows, algo, seed, render]);
+
+  // 초기 생성 + 값 변경시 재생성(애니 없이)
+  useEffect(() => {
+    build(false);
+    // eslint-disable-next-line
+  }, [cols, rows, algo]);
+
+  useEffect(() => { render(); }, [render]);
+
+  // 툴바 액션
+  const flash = (msg) => { setToast(msg); setTimeout(() => setToast(''), 1600); };
+
+  const onCopy = async () => {
+    try {
+      const canvas = canvasRef.current;
+      canvas.toBlob(async (blob) => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          flash('이미지 복사됨! 📋');
+        } catch {
+          flash('복사 실패 😢');
+        }
+      });
+    } catch { flash('복사 실패 😢'); }
+  };
+
+  const onDownload = () => {
+    const canvas = canvasRef.current;
+    const link = document.createElement('a');
+    link.download = `maze-${algo}-${seed}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    flash('PNG 저장됨! 💾');
+  };
+
+  const onShare = async () => {
+    const canvas = canvasRef.current;
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], `maze-${seed}.png`, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: '내가 만든 미로!' }); return; } catch {}
+      }
+      onCopy();
+    });
+  };
+
+  const onPrint = () => {
+    const canvas = canvasRef.current;
+    const w = window.open('');
+    w.document.write(`<html><body style="margin:0"><img src="${canvas.toDataURL()}" style="width:100%"/></body></html>`);
+    w.print();
+  };
+
+  const saveToGallery = () => {
+    const canvas = canvasRef.current;
+    const thumb = canvas.toDataURL('image/png');
+    setGallery((g) => [{ id: Date.now(), thumb, algo, seed, cols, rows }, ...g].slice(0, 12));
+    flash('갤러리에 추가됨! 🎨');
+  };
+
+  const loadFromGallery = (item) => {
+    setCols(item.cols); setRows(item.rows); setAlgo(item.algo); setSeed(item.seed);
+    setTimeout(() => build(false), 50);
+  };
+
+  return (
+    <div ref={containerRef} style={{
+      position: 'relative', width: '100%', height: '100%',
+      background: theme.bg, color: theme.text,
+      fontFamily: theme.fontBody, overflow: 'hidden',
+    }}>
+      {/* 배경 장식 (variant별) */}
+      <BackgroundDecor variant={variant} />
+
+      {/* 미로 캔버스 (중앙) */}
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+      }}>
+        <canvas ref={canvasRef} style={{
+          maxWidth: '100%', maxHeight: '100%',
+          filter: animating ? 'none' : variant === 'jelly' ? 'drop-shadow(0 10px 40px rgba(180,140,255,0.4))' : 'none',
+        }} />
+      </div>
+
+      {/* 상단 타이틀 */}
+      <TopTitle variant={variant} theme={theme} />
+
+      {/* 플로팅 컨트롤 패널 */}
+      <ControlPanel
+        variant={variant} theme={theme}
+        cols={cols} setCols={setCols}
+        rows={rows} setRows={setRows}
+        cell={cell} setCell={setCell}
+        algo={algo} setAlgo={setAlgo}
+        seed={seed} setSeed={setSeed}
+        showSolution={showSolution} setShowSolution={setShowSolution}
+        animating={animating}
+        onBuild={() => build(true)}
+        onCopy={onCopy}
+        onDownload={onDownload}
+        onShare={onShare}
+        onPrint={onPrint}
+        onSaveGallery={saveToGallery}
+        onShowAlgoInfo={() => setShowAlgoInfo(true)}
+      />
+
+      {/* 갤러리 */}
+      <Gallery variant={variant} theme={theme} items={gallery}
+        onLoad={loadFromGallery}
+        onDelete={(id) => setGallery((g) => g.filter((x) => x.id !== id))} />
+
+      {/* 알고리즘 설명 모달 */}
+      {showAlgoInfo && (
+        <AlgoInfoModal variant={variant} theme={theme} algo={algo}
+          onClose={() => setShowAlgoInfo(false)} />
+      )}
+
+      {/* 토스트 */}
+      {toast && <Toast variant={variant} theme={theme} msg={toast} />}
+    </div>
+  );
+}
+
+window.MazeApp = MazeApp;
+window.THEMES = THEMES;
+
+</script>
+<script type="text/babel">
+ReactDOM.createRoot(document.getElementById('root')).render(
+  React.createElement(MazeApp, { variant: 'crayon' })
+);
 </script>
 </body>
 </html>
